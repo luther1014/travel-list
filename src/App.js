@@ -22,6 +22,12 @@ export default function App() {
     );
   }
 
+  function handleClearList() {
+    if (window.confirm("Are you sure you to clear the list ?")) {
+      setItems([]);
+    }
+  }
+
   return (
     <>
       <Logo />
@@ -30,6 +36,7 @@ export default function App() {
         items={items}
         handleDeleteItem={handleDeleteItem}
         handleCheckbox={handleCheckbox}
+        onClearList={handleClearList}
       />
       <Stats items={items} />
     </>
@@ -55,6 +62,9 @@ function Form({ handleSaveItem }) {
     };
     console.log("new item:", item);
     handleSaveItem(item);
+
+    setDescription("");
+    setQuantity(1);
   }
 
   return (
@@ -82,11 +92,23 @@ function Form({ handleSaveItem }) {
   );
 }
 
-function PackingList({ items, handleDeleteItem, handleCheckbox }) {
+function PackingList({ items, handleDeleteItem, handleCheckbox, onClearList }) {
+  const [sortBy, setSortBy] = useState("input");
+  let sortedItems;
+
+  if (sortBy === "input") sortedItems = items;
+  if (sortBy === "description")
+    sortedItems = items
+      .slice()
+      .sort((a, b) => a.description.localeCompare(b.description));
+  if (sortBy === "packed")
+    sortedItems = items
+      .slice()
+      .sort((a, b) => Number(a.packed) - Number(b.packed));
   return (
     <div className="list">
       <ul>
-        {items.map((item) => (
+        {sortedItems.map((item) => (
           <Item
             item={item}
             key={item.id}
@@ -95,6 +117,15 @@ function PackingList({ items, handleDeleteItem, handleCheckbox }) {
           />
         ))}
       </ul>
+
+      <div className="actions">
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+          <option value="input">Sort by input order</option>
+          <option value="description">Sort by description</option>
+          <option value="packed">Sort by packed status</option>
+        </select>
+        <button onClick={onClearList}>Clear list</button>
+      </div>
     </div>
   );
 }
