@@ -1,18 +1,37 @@
 import { useState } from "react";
 
-const initialItems = [
-  { id: 1, description: "Passports", quantity: 2, packed: false },
-  { id: 2, description: "Socks", quantity: 12, packed: false },
-  { id: 3, description: "Charger", quantity: 1, packed: true },
-];
-
 export default function App() {
+  const [items, setItems] = useState([]);
+
+  function handleItemSave(item) {
+    setItems(() => [...items, item]);
+  }
+
+  function handleDeleteItem(id) {
+    setItems((items) => items.filter((item) => item.id !== id));
+  }
+
+  function handleCheckbox(id) {
+    setItems((items) =>
+      items.map((item) => {
+        if (item.id === id) {
+          return { ...item, packed: !item.packed };
+        }
+        return item;
+      })
+    );
+  }
+
   return (
     <>
       <Logo />
-      <Form />
-      <PackingList />
-      <Stats />
+      <Form handleSaveItem={handleItemSave} />
+      <PackingList
+        items={items}
+        handleDeleteItem={handleDeleteItem}
+        handleCheckbox={handleCheckbox}
+      />
+      <Stats items={items} />
     </>
   );
 }
@@ -21,7 +40,7 @@ function Logo() {
   return <h1>🏖️🍷 Far Away 🏕️🌃</h1>;
 }
 
-function Form() {
+function Form({ handleSaveItem }) {
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState(1);
 
@@ -35,6 +54,7 @@ function Form() {
       id: Date.now(),
     };
     console.log("new item:", item);
+    handleSaveItem(item);
   }
 
   return (
@@ -62,33 +82,57 @@ function Form() {
   );
 }
 
-function PackingList() {
+function PackingList({ items, handleDeleteItem, handleCheckbox }) {
   return (
     <div className="list">
       <ul>
-        {initialItems.map((item) => (
-          <Item item={item} key={item.id} />
+        {items.map((item) => (
+          <Item
+            item={item}
+            key={item.id}
+            handleDeleteItem={handleDeleteItem}
+            handleCheckbox={handleCheckbox}
+          />
         ))}
       </ul>
     </div>
   );
 }
 
-function Item({ item }) {
+function Item({ item, handleDeleteItem, handleCheckbox }) {
   return (
     <li>
+      <input
+        type="checkbox"
+        value={item.packed}
+        onChange={() => handleCheckbox(item.id)}
+      />
       <span style={{ textDecoration: item.packed && "line-through" }}>
         {item.quantity} {item.description}
       </span>
-      <button>❌</button>
+      <button onClick={() => handleDeleteItem(item.id)}>❌</button>
     </li>
   );
 }
 
-function Stats() {
+function Stats({ items }) {
+  if (!items.length)
+    return (
+      <p className="stats">
+        <em>Start adding items to your packing list 🚀</em>
+      </p>
+    );
+  const numItems = items.length;
+  const numPacked = items.filter((item) => item.packed).length;
+  const percentage = Math.round((numPacked / numItems) * 100);
   return (
     <footer className="stats">
-      <em>💼 You have X items in you list. You have already packed Y (Z%).</em>
+      <em>
+        {percentage === 100
+          ? "You have everything! Ready to go ✈️"
+          : `💼 You have ${numItems} items in your list. You have already packed
+        ${numPacked} (${percentage})%.`}
+      </em>
     </footer>
   );
 }
